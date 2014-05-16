@@ -6,7 +6,7 @@ sys.path.append("..")
 import puka
 from servo import Servo
 
-client = puka.Client("amqp://localhost/")
+client = puka.Client("amqp://raspberrypi/")
 promise = client.connect()
 client.wait(promise)
 
@@ -24,7 +24,10 @@ while True:
 	print "  [x] Received message %r" % (result,)
 
 	servo.position = int(result.get('body', ''))
-	servo.update_position()
+	try:
+		servo.update_position()
+	except Exception, e:
+		print "Couldn't update position. %s" % e
 
 	client.basic_ack(result)
 

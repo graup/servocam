@@ -36,7 +36,7 @@ def servo():
 
 if __name__ == "__main__":
 
-    message_queue = puka.Client("amqp://localhost/")
+    message_queue = puka.Client("amqp://raspberrypi/")
     promise = message_queue.connect()
     print "Waiting for AMQP client to connect ..."
     message_queue.wait(promise)
@@ -46,4 +46,4 @@ if __name__ == "__main__":
     servo = Servo()
 
     app.debug = True
-    app.run()
+    app.run(host='0.0.0.0')
