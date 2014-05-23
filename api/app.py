@@ -5,10 +5,13 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from flask import Flask, jsonify, request
 from controller.servo import Servo
+from socket import gaierror
 import puka
-app = Flask(__name__)
 
-def update_position():
+app = Flask(__name__)
+app.config.from_object('settings.Config')
+
+def notify_controller():
     promise = message_queue.basic_publish(exchange='', routing_key='servo',
                               body=str(servo.position))
     message_queue.wait(promise)
@@ -29,21 +32,24 @@ def servo():
         if pos:
             response['description'] = 'Servo position set to ' + str(pos)
             servo.position = pos
-            update_position()
+            notify_controller()
 
     response["position"] = servo.position
     return jsonify(**response)
 
 if __name__ == "__main__":
 
-    message_queue = puka.Client("amqp://raspberrypi/")
-    promise = message_queue.connect()
-    print "Waiting for AMQP client to connect ..."
-    message_queue.wait(promise)
-    promise = message_queue.queue_declare(queue='servo')
-    message_queue.wait(promise)
+    try:
+        message_queue = puka.Client(app.config['AMQP']['host'])
+        promise = message_queue.connect()
+        print "Waiting for AMQP client to connect ..."
+        message_queue.wait(promise)
+        promise = message_queue.queue_declare(queue='servo')
+        message_queue.wait(promise)
+    except gaierror, e:
+        print "Connection to AMQP at %s failed. %s" % (app.config['AMQP']['host'], e)
 
     servo = Servo()
 
-    app.debug = True
-    app.run(host='0.0.0.0')
+    app.debug = app.config['DEBUG']
+    app.run(host=app.config['HOST'])
