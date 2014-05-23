@@ -8,7 +8,11 @@ class Servo:
 	position = 0
 
 	def angle_to_time(self, angle):
-		return 20000 * (angle/360)
+		if angle > 180:
+			angle = 180
+		if angle < 0:
+			angle = 0
+		return 600 + 1800 * (angle/180)
 
 	def update_position(self):
 		from RPIO import PWM
